@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PHM Matematika Gyakorlók</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --jezsuita-bordo: #BA0527;
+            --jezsuita-bordo-light: #FDF2F4;
+            --bg-color: #F8FAFC;
+            --text-dark: #1E293B;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-dark);
+            margin: 0; padding: 40px 20px;
+            display: flex; flex-direction: column; align-items: center;
+        }
+        .container { max-width: 600px; width: 100%; }
+        header { text-align: center; margin-bottom: 30px; }
+        h1 { color: var(--jezsuita-bordo); font-size: 28px; margin-bottom: 5px; }
+        p.subtitle { color: #64748B; margin-top: 0; }
+        .card {
+            background: white; border-radius: 12px; padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-left: 6px solid var(--jezsuita-bordo);
+        }
+        .list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 12px; }
+        .item-link {
+            display: flex; align-items: center; gap: 12px;
+            text-decoration: none; color: var(--text-dark); font-weight: 600;
+            padding: 12px 16px; background: var(--jezsuita-bordo-light);
+            border-radius: 8px; transition: all 0.2s;
+        }
+        .item-link:hover { background: var(--jezsuita-bordo); color: white; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Matematika Gyakorlók</h1>
+            <p class="subtitle">Fényi Gyula Jezsuita Gimnázium</p>
+        </header>
+
+        <div class="card">
+            <ul class="list">
+                <li>
+                    <a href="9_logikai_szita.html" class="item-link">
+                        <i class="fa-solid fa-circle-nodes"></i> 9. Osztály - Logikai Szita Gyakorló
+                    </a>
+                </li>
+                <li>
+                    <a href="9_masodfoku_transzformacio.html" class="item-link">
+                        <i class="fa-solid fa-chart-line"></i> 9. Osztály - Másodfokú Függvény Transzformáció
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>
