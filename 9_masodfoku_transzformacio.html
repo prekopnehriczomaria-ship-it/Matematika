@@ -1,0 +1,268 @@
+
+
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Másodfokú függvény transzformációja - Javított koordináta-rendszer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f7f6;
+            color: #333;
+        }
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            max-width: 1000px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .controls {
+            flex: 1;
+            min-width: 280px;
+        }
+        .canvas-container {
+            flex: 1;
+            min-width: 320px;
+        }
+        canvas {
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            background-color: #ffffff;
+            display: block; /* Eltávolítja a canvas alatti extra helyet */
+        }
+        .control-group {
+            margin-bottom: 20px;
+        }
+        label {
+            font-weight: bold;
+            display: block;
+            margin-bottom: 5px;
+        }
+        input[type=range] {
+            width: 100%;
+        }
+        .formula {
+            font-size: 1.2rem;
+            background: #eef2f5;
+            padding: 10px;
+            border-radius: 6px;
+            text-align: center;
+            margin-bottom: 20px;
+            font-family: "Courier New", Courier, monospace;
+        }
+        .value-display {
+            color: #0066cc;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="controls">
+        <h2>Másodfokú függvény</h2>
+        <div class="formula" id="formulaDisplay">
+            f(x) = 1(x - 0)² + 0
+        </div>
+
+        <div class="control-group">
+            <label for="sliderA">Függőleges nyújtás / tükrözés (a): <span class="value-display" id="valA">1</span></label>
+            <input type="range" id="sliderA" min="-4" max="4" step="0.5" value="1">
+        </div>
+
+        <div class="control-group">
+            <label for="sliderU">Vízszintes eltolás (u): <span class="value-display" id="valU">0</span></label>
+            <input type="range" id="sliderU" min="-10" max="10" step="0.5" value="0">
+        </div>
+
+        <div class="control-group">
+            <label for="sliderV">Függőleges eltolás (v): <span class="value-display" id="valV">0</span></label>
+            <input type="range" id="sliderV" min="-10" max="10" step="0.5" value="0">
+        </div>
+
+        <p><strong>Tapasztalatok a diákoknak:</strong></p>
+        <ul>
+            <li><strong>a > 0:</strong> felfelé nyíló, <strong>a < 0:</strong> lefelé nyíló parabola.</li>
+            <li><strong>u:</strong> jobbra/balra tolja a tengelypontot (vigyázz az előjelre!).</li>
+            <li><strong>v:</strong> fel/le tolja a tengelypontot.</li>
+        </ul>
+    </div>
+
+    <div class="canvas-container">
+        <!-- Canvas méretének beállítása, hogy illeszkedjen a hálóhoz -->
+        <canvas id="graphCanvas" width="480" height="480"></canvas>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('graphCanvas');
+    const ctx = canvas.getContext('2d');
+
+    const sliderA = document.getElementById('sliderA');
+    const sliderU = document.getElementById('sliderU');
+    const sliderV = document.getElementById('sliderV');
+
+    const valA = document.getElementById('valA');
+    const valU = document.getElementById('valU');
+    const valV = document.getElementById('valV');
+    const formulaDisplay = document.getElementById('formulaDisplay');
+
+    // --- Javított Koordináta-rendszer paraméterei ---
+    const scale = 40; // 1 egység = 40 pixel (a hálóhoz igazítva)
+    const originX = canvas.width / 2; // Középre helyezve
+    const originY = canvas.height / 2; // Középre helyezve
+
+    function drawGrid() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Háló berajzolása
+        ctx.strokeStyle = '#e0e0e0';
+        ctx.lineWidth = 1;
+
+        for (let x = 0; x <= canvas.width; x += scale) {
+            ctx.beginPath();
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, canvas.height);
+            ctx.stroke();
+        }
+
+        for (let y = 0; y <= canvas.height; y += scale) {
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(canvas.width, y);
+            ctx.stroke();
+        }
+
+        // Tengelyek
+        ctx.strokeStyle = '#333';
+        ctx.lineWidth = 2;
+
+        // X tengely
+        ctx.beginPath();
+        ctx.moveTo(0, originY);
+        ctx.lineTo(canvas.width, originY);
+        ctx.stroke();
+
+        // Y tengely
+        ctx.beginPath();
+        ctx.moveTo(originX, 0);
+        ctx.lineTo(originX, canvas.height);
+        ctx.stroke();
+
+        // --- ÚJ: Tengely feliratok (számok) felrajzolása ---
+        ctx.fillStyle = '#666';
+        ctx.font = '12px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+
+        // X tengely számai
+        for (let xNum = -Math.floor(originX / scale); xNum <= Math.floor((canvas.width - originX) / scale); xNum++) {
+            if (xNum === 0) continue; // Az origónál ne írjunk 0-t kétszer
+            let pixX = originX + (xNum * scale);
+            ctx.fillText(xNum, pixX, originY + 5);
+        }
+
+        // Y tengely számai
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'middle';
+        for (let yNum = -Math.floor((canvas.height - originY) / scale); yNum <= Math.floor(originY / scale); yNum++) {
+            if (yNum === 0) continue;
+            let pixY = originY - (yNum * scale); // Canvas Y lefelé nő
+            ctx.fillText(yNum, originX - 5, pixY);
+        }
+
+        // Origó jelölése (kis 0)
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'top';
+        ctx.fillText('0', originX - 5, originY + 5);
+    }
+
+    function drawParabola(a, u, v) {
+        ctx.beginPath();
+        ctx.strokeStyle = '#0066cc';
+        ctx.lineWidth = 3;
+
+        let firstPoint = true;
+
+        // PixelX végigfuttatása, matematikai x kiszámítása
+        for (let pixelX = 0; pixelX <= canvas.width; pixelX += 2) {
+            // Pixel koordinátából matematikai x
+            let x = (pixelX - originX) / scale;
+            
+            // Függvényérték: f(x) = a*(x - u)^2 + v
+            let y = a * Math.pow(x - u, 2) + v;
+
+            // Matematikai y-ból pixel Y (Canvas Y tengelye lefelé nő!)
+            let pixelY = originY - (y * scale);
+
+            // Csak akkor rajzoljunk, ha a pont a canvas-en belül van
+            if (pixelY >= 0 && pixelY <= canvas.height) {
+                if (firstPoint) {
+                    ctx.moveTo(pixelX, pixelY);
+                    firstPoint = false;
+                } else {
+                    ctx.lineTo(pixelX, pixelY);
+                }
+            } else if (!firstPoint) {
+                // Ha kimentünk a képből, fejezzük be a vonalat
+                ctx.stroke();
+                ctx.beginPath();
+                firstPoint = true;
+            }
+        }
+        ctx.stroke();
+
+        // Tengelypont (Csúcspont) megjelölése
+        let vertexPixelX = originX + (u * scale);
+        let vertexPixelY = originY - (v * scale);
+
+        // Csak akkor rajzoljuk a pontot, ha látható
+        if (vertexPixelX >= 0 && vertexPixelX <= canvas.width && vertexPixelY >= 0 && vertexPixelY <= canvas.height) {
+            ctx.beginPath();
+            ctx.arc(vertexPixelX, vertexPixelY, 6, 0, 2 * Math.PI);
+            ctx.fillStyle = '#cc0000';
+            ctx.fill();
+        }
+    }
+
+    function update() {
+        const a = parseFloat(sliderA.value);
+        const u = parseFloat(sliderU.value);
+        const v = parseFloat(sliderV.value);
+
+        // Szöveges értékek frissítése
+        valA.textContent = a;
+        valU.textContent = u;
+        valV.textContent = v;
+
+        // Képlet frissítése (szebb előjelekkel)
+        let uDisplay = u === 0 ? "0" : Math.abs(u);
+        let uSign = u >= 0 ? `- ${uDisplay}` : `+ ${uDisplay}`;
+        let vDisplay = v === 0 ? "0" : Math.abs(v);
+        let vSign = v >= 0 ? `+ ${vDisplay}` : `- ${vDisplay}`;
+        formulaDisplay.textContent = `f(x) = ${a}(x ${uSign})² ${vSign}`;
+
+        // Rajzolás
+        drawGrid();
+        drawParabola(a, u, v);
+    }
+
+    // Eseménykezelők a csúszkákhoz
+    sliderA.addEventListener('input', update);
+    sliderU.addEventListener('input', update);
+    sliderV.addEventListener('input', update);
+
+    // Első kirajzolás
+    update();
+</script>
+
+</body>
+</html>
+
