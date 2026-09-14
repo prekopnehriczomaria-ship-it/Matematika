@@ -91,6 +91,7 @@
     let score = 0;
     let total = 0;
     let answered = false;
+    let taskQueue = [];
 
     const canvas = document.getElementById('triangleCanvas');
     const ctx = canvas.getContext('2d');
@@ -126,13 +127,33 @@
         ctx.fillText(labels.alpha, A.x + 30, A.y - 10);
     }
 
+    function refillQueue() {
+        // Változatos feladattípusok paklija
+        const pool = [
+            'sin_find_a',   // sin: 'a' keresése
+            'cos_find_b',   // cos: 'b' keresése
+            'tan_find_a',   // tan: 'a' keresése
+            'sin_find_c',   // sin: 'c' keresése
+            'cos_find_c',   // cos: 'c' keresése
+            'find_alpha_sin'// szögkeresés sin-nel
+        ];
+        // Keverés (Fisher-Yates shuffle)
+        for (let i = pool.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [pool[i], pool[j]] = [pool[j], pool[i]];
+        }
+        taskQueue = pool;
+    }
+
     function generateTask() {
         answered = false;
         document.getElementById('userAnswer').value = '';
         document.getElementById('feedback').className = 'feedback';
         
-        const types = ['find_a', 'find_c', 'find_alpha'];
-        const taskType = types[Math.floor(Math.random() * types.length)];
+        if (taskQueue.length === 0) {
+            refillQueue();
+        }
+        const taskType = taskQueue.pop();
 
         const alpha = Math.floor(Math.random() * 40) + 25; 
         const alphaRad = alpha * (Math.PI / 180);
@@ -140,19 +161,40 @@
         const a = +(c * Math.sin(alphaRad)).toFixed(1);
         const b = +(c * Math.cos(alphaRad)).toFixed(1);
 
-        if (taskType === 'find_a') {
+        if (taskType === 'sin_find_a') {
             currentTask = {
                 text: `Adott a c = ${c} cm átfogó és az α = ${alpha}° hegyesszög. Számítsd ki a szöggel szemközti 'a' befogó hosszát! (1 tizedesjegyre kerekítve)`,
                 target: a,
                 unit: 'cm',
                 labels: { a: 'a = ?', b: 'b', c: `c = ${c} cm`, alpha: `α = ${alpha}°` }
             };
-        } else if (taskType === 'find_c') {
+        } else if (taskType === 'cos_find_b') {
+            currentTask = {
+                text: `Adott a c = ${c} cm átfogó és az α = ${alpha}° hegyesszög. Számítsd ki a szög melletti 'b' befogó hosszát! (1 tizedesjegyre kerekítve)`,
+                target: b,
+                unit: 'cm',
+                labels: { a: 'a', b: 'b = ?', c: `c = ${c} cm`, alpha: `α = ${alpha}°` }
+            };
+        } else if (taskType === 'tan_find_a') {
+            currentTask = {
+                text: `Adott a szög melletti b = ${b} cm befogó és az α = ${alpha}° hegyesszög. Számítsd ki a szöggel szemközti 'a' befogó hosszát! (1 tizedesjegyre kerekítve)`,
+                target: a,
+                unit: 'cm',
+                labels: { a: 'a = ?', b: `b = ${b} cm`, c: 'c', alpha: `α = ${alpha}°` }
+            };
+        } else if (taskType === 'sin_find_c') {
             currentTask = {
                 text: `Adott az a = ${a} cm befogó és a vele szemközti α = ${alpha}° szög. Számítsd ki a 'c' átfogó hosszát! (1 tizedesjegyre kerekítve)`,
                 target: c,
                 unit: 'cm',
                 labels: { a: `a = ${a} cm`, b: 'b', c: 'c = ?', alpha: `α = ${alpha}°` }
+            };
+        } else if (taskType === 'cos_find_c') {
+            currentTask = {
+                text: `Adott a szög melletti b = ${b} cm befogó és az α = ${alpha}° szög. Számítsd ki a 'c' átfogó hosszát! (1 tizedesjegyre kerekítve)`,
+                target: c,
+                unit: 'cm',
+                labels: { a: 'a', b: `b = ${b} cm`, c: 'c = ?', alpha: `α = ${alpha}°` }
             };
         } else {
             currentTask = {
