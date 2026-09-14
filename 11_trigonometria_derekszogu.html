@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trigonometria Gyakorló - PHM</title>
+    <style>
+        :root {
+            --bordo: #BA0527;
+            --bordo-light: #FDF2F4;
+            --dark: #1E293B;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #F8FAFC;
+            color: var(--dark);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+        .container {
+            background: white;
+            max-width: 650px;
+            width: 100%;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            border-top: 6px solid var(--bordo);
+        }
+        h1 { color: var(--bordo); margin-top: 0; font-size: 24px; text-align: center; }
+        .score-board {
+            display: flex; justify-content: space-between; background: var(--bordo-light);
+            padding: 10px 15px; border-radius: 8px; font-weight: bold; margin-bottom: 20px;
+        }
+        .canvas-container { text-align: center; margin-bottom: 20px; }
+        canvas { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; }
+        .task-card {
+            background: #F1F5F9; padding: 15px; border-radius: 8px; font-size: 1.1rem; margin-bottom: 20px;
+        }
+        .input-group { display: flex; gap: 10px; align-items: center; margin-bottom: 20px; }
+        input[type="number"] {
+            padding: 10px; font-size: 1rem; border: 2px solid #CBD5E1;
+            border-radius: 6px; width: 120px; outline: none;
+        }
+        input[type="number"]:focus { border-color: var(--bordo); }
+        .btn {
+            padding: 10px 20px; font-size: 1rem; font-weight: bold; border: none;
+            border-radius: 6px; cursor: pointer; transition: 0.2s;
+        }
+        .btn-check { background: var(--bordo); color: white; }
+        .btn-check:hover { background: #96031E; }
+        .btn-next { background: #475569; color: white; }
+        .btn-next:hover { background: #334155; }
+        .feedback { font-weight: bold; padding: 10px; border-radius: 6px; display: none; margin-bottom: 15px; }
+        .feedback.correct { background: #DCFCE7; color: #166534; display: block; }
+        .feedback.wrong { background: #FEE2E2; color: #991B1B; display: block; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Derékszögű háromszög - Trigonometria</h1>
+    
+    <div class="score-board">
+        <span>Helyes válaszok: <span id="score">0</span></span>
+        <span>Összes próbálkozás: <span id="total">0</span></span>
+    </div>
+
+    <div class="canvas-container">
+        <canvas id="triangleCanvas" width="360" height="220"></canvas>
+    </div>
+
+    <div class="task-card" id="taskText">Feladat betöltése...</div>
+
+    <div id="feedback" class="feedback"></div>
+
+    <div class="input-group">
+        <label for="userAnswer"><strong>Válaszod:</strong></label>
+        <input type="number" id="userAnswer" step="0.1" placeholder="0.0">
+        <span id="unitText">cm</span>
+        <button class="btn btn-check" onclick="checkAnswer()">Ellenőrzés</button>
+        <button class="btn btn-next" onclick="generateTask()">Új feladat</button>
+    </div>
+</div>
+
+<script>
+    let currentTask = {};
+    let score = 0;
+    let total = 0;
+    let answered = false;
+
+    const canvas = document.getElementById('triangleCanvas');
+    const ctx = canvas.getContext('2d');
+
+    function drawTriangle(labels) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Háromszög csúcsai (C a derékszög)
+        const A = { x: 50, y: 180 };
+        const C = { x: 280, y: 180 };
+        const B = { x: 280, y: 40 };
+
+        // Oldalak rajzolása
+        ctx.beginPath();
+        ctx.moveTo(A.x, A.y);
+        ctx.lineTo(C.x, C.y);
+        ctx.lineTo(B.x, B.y);
+        ctx.closePath();
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = '#1E293B';
+        ctx.stroke();
+
+        // Derékszög jelölése
+        ctx.beginPath();
+        ctx.rect(C.x - 15, C.y - 15, 15, 15);
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = '#64748B';
+        ctx.stroke();
+
+        // Feliratok
+        ctx.font = '14px Arial';
+        ctx.fillStyle = '#BA0527';
+        
+        // Átfogó (c)
+        ctx.fillText(labels.c, (A.x + B.x)/2 - 20, (A.y + B.y)/2 - 10);
+        // Befogók (a, b)
+        ctx.fillText(labels.a, C.x + 10, (B.y + C.y)/2);
+        ctx.fillText(labels.b, (A.x + C.x)/2, C.y + 20);
+        // Alfa szög
+        ctx.fillText(labels.alpha, A.x + 30, A.y - 10);
+    }
+
+    function generateTask() {
+        answered = false;
+        document.getElementById('userAnswer').value = '';
+        document.getElementById('feedback').className = 'feedback';
+        
+        const types = ['find_side', 'find_angle'];
+        const taskType = types[Math.floor(Math.random() * types.length)];
+
+        const alpha = Math.floor(Math.random() * 40) + 25; // 25° - 65°
+        const alphaRad = alpha * (Math.PI / 180);
+        const c = Math.floor(Math.random() * 15) + 10; // 10 - 25 cm
+        const a = +(c * Math.sin(alphaRad)).toFixed(1);
+        const b = +(c * Math.cos(alphaRad)).toFixed(1);
+
+        if (taskType === 'find_side') {
+            const subType = Math.floor(Math.random() * 2);
+            if (subType === 0) { // Keressük 'a' oldalt: a = c * sin(alpha)
+                currentTask = {
+                    text: `Adott a c = ${c} cm átfogó és az α = ${alpha}° hegyesszög. Számítsd ki a szöggel szemközti 'a' befogó hosszát! (1 tizedesjegyre kerekítve)`,
+                    target: a,
+                    unit: 'cm',
+                    labels: { a: 'a = ?', b: 'b', c: `c = ${c} cm`, alpha: `α = ${alpha}°` }
+                };
+            } else { // Keressük 'c' átfogót: c = a / sin(alpha)
+                currentTask = {
+                    text: `Adott az a = ${a} cm befogó és a vele szemközti α = ${alpha}° szög. Számítsd ki a 'c' átfogó hosszát! (1 tizedesjegyre kerekítve)`,
+                    target: c,
+                    unit: 'cm',
+                    labels: { a: `a = ${a} cm`, b: 'b', c: 'c = ?', alpha: `α = ${alpha}°` }
+                };
+            }
+        } else { // Keressük a szöget: sin(alpha) = a / c
+            currentTask = {
+                text: `Adott az a = ${a} cm befogó és a c = ${c} cm átfogó. Számítsd ki az 'a' oldallal szemközti α szöget fokban! (1 tizedesjegyre kerekítve)`,
+                target: alpha,
+                unit: '°',
+                labels: { a: `a = ${a} cm`, b: 'b', c: `c = ${c} cm`, alpha: 'α = ?' }
+            };
+        }
+
+        document.getElementById('taskText').innerText = currentTask.text;
+        document.getElementById('unitText').innerText = currentTask.unit;
+        drawTriangle(currentTask.labels);
+    }
+
+    function checkAnswer() {
+        if (answered) return;
+        const val = parseFloat(document.getElementById('userAnswer').value);
+        const feedback = document.getElementById('feedback');
+
+        if (isNaN(val)) {
+            alert('Kérlek, írj be egy számot!');
+            return;
+        }
+
+        total++;
+        answered = true;
+        const diff = Math.abs(val - currentTask.target);
+
+        if (diff <= 0.2) { // Kerekítési pontatlanság elfogadása
+            score++;
+            feedback.innerText = 'Helyes válasz! Szép munka!';
+            feedback.className = 'feedback correct';
+        } else {
+            feedback.innerText = `Sajnos nem pontos. A helyes eredmény: ${currentTask.target} ${currentTask.unit}`;
+            feedback.className = 'feedback wrong';
+        }
+
+        document.getElementById('score').innerText = score;
+        document.getElementById('total').innerText = total;
+    }
+
+    generateTask();
+</script>
+
+</body>
+</html>
