@@ -70,7 +70,7 @@
     </div>
 
     <div class="canvas-container">
-        <canvas id="triangleCanvas" width="360" height="220"></canvas>
+        <canvas id="triangleCanvas" width="360" height="240"></canvas>
     </div>
 
     <div class="task-card" id="taskText">Feladat betöltése...</div>
@@ -99,10 +99,34 @@
     function drawTriangle(labels) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         
-        const A = { x: 50, y: 180 };
-        const C = { x: 280, y: 180 };
-        const B = { x: 280, y: 40 };
+        // 4-féle orientáció véletlenszerű sorsolása
+        const orientation = Math.floor(Math.random() * 4);
+        
+        let A, B, C;
+        // C a derékszögű csúcs, A-nál van az alpha szög, B a másik hegyesszög
+        if (orientation === 0) {
+            // Jobb alsó derékszög
+            C = { x: 290, y: 190 };
+            A = { x: 50,  y: 190 };
+            B = { x: 290, y: 40 };
+        } else if (orientation === 1) {
+            // Bal alsó derékszög
+            C = { x: 70,  y: 190 };
+            A = { x: 310, y: 190 };
+            B = { x: 70,  y: 40 };
+        } else if (orientation === 2) {
+            // Jobb felső derékszög
+            C = { x: 290, y: 40 };
+            A = { x: 50,  y: 40 };
+            B = { x: 290, y: 190 };
+        } else {
+            // Bal felső derékszög
+            C = { x: 70,  y: 40 };
+            A = { x: 310, y: 40 };
+            B = { x: 70,  y: 190 };
+        }
 
+        // Háromszög rajzolása
         ctx.beginPath();
         ctx.moveTo(A.x, A.y);
         ctx.lineTo(C.x, C.y);
@@ -112,32 +136,54 @@
         ctx.strokeStyle = '#1E293B';
         ctx.stroke();
 
+        // Derékszög négyzetének rajzolása
+        const dx1 = Math.sign(A.x - C.x) * 15;
+        const dy2 = Math.sign(B.y - C.y) * 15;
         ctx.beginPath();
-        ctx.rect(C.x - 15, C.y - 15, 15, 15);
+        ctx.moveTo(C.x + dx1, C.y);
+        ctx.lineTo(C.x + dx1, C.y + dy2);
+        ctx.lineTo(C.x, C.y + dy2);
         ctx.lineWidth = 1;
         ctx.strokeStyle = '#64748B';
         ctx.stroke();
 
-        ctx.font = '14px Arial';
+        // Feliratok elhelyezése
+        ctx.font = 'bold 14px Arial';
         ctx.fillStyle = '#BA0527';
-        
-        ctx.fillText(labels.c, (A.x + B.x)/2 - 20, (A.y + B.y)/2 - 10);
-        ctx.fillText(labels.a, C.x + 10, (B.y + C.y)/2);
-        ctx.fillText(labels.b, (A.x + C.x)/2, C.y + 20);
-        ctx.fillText(labels.alpha, A.x + 30, A.y - 10);
+
+        // Átfogó (c) középértéke
+        const midCX = (A.x + B.x) / 2;
+        const midCY = (A.y + B.y) / 2;
+        const offsetX_c = (midCX < canvas.width / 2) ? -35 : 15;
+        ctx.fillText(labels.c, midCX + offsetX_c, midCY);
+
+        // BC oldal ('a' befogó - szöggel szemközti)
+        const midAX = (B.x + C.x) / 2;
+        const midAY = (B.y + C.y) / 2;
+        const offsetX_a = (C.x > canvas.width / 2) ? 12 : -65;
+        ctx.fillText(labels.a, midAX + offsetX_a, midAY);
+
+        // AC oldal ('b' befogó - szög melletti)
+        const midBX = (A.x + C.x) / 2;
+        const midBY = (A.y + C.y) / 2;
+        const offsetY_b = (C.y > canvas.height / 2) ? 20 : -10;
+        ctx.fillText(labels.b, midBX - 20, midBY + offsetY_b);
+
+        // Alpha szög jelölése A csúcsnál
+        const alphaOffsetX = (A.x < C.x) ? 25 : -45;
+        const alphaOffsetY = (A.y > B.y) ? -10 : 20;
+        ctx.fillText(labels.alpha, A.x + alphaOffsetX, A.y + alphaOffsetY);
     }
 
     function refillQueue() {
-        // Változatos feladattípusok paklija
         const pool = [
-            'sin_find_a',   // sin: 'a' keresése
-            'cos_find_b',   // cos: 'b' keresése
-            'tan_find_a',   // tan: 'a' keresése
-            'sin_find_c',   // sin: 'c' keresése
-            'cos_find_c',   // cos: 'c' keresése
-            'find_alpha_sin'// szögkeresés sin-nel
+            'sin_find_a',   
+            'cos_find_b',   
+            'tan_find_a',   
+            'sin_find_c',   
+            'cos_find_c',   
+            'find_alpha_sin'
         ];
-        // Keverés (Fisher-Yates shuffle)
         for (let i = pool.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [pool[i], pool[j]] = [pool[j], pool[i]];
