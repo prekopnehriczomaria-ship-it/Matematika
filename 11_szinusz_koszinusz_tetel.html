@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Szinusz- és Koszinusztétel Gyakorló - PHM</title>
+    <style>
+        :root {
+            --bordo: #BA0527;
+            --bordo-dark: #8A031D;
+            --bordo-light: #FDF2F4;
+            --dark: #1E293B;
+            --gray-bg: #F8FAFC;
+            --card-border: #E2E8F0;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--gray-bg);
+            color: var(--dark);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+        .container {
+            background: white;
+            max-width: 680px;
+            width: 100%;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            border-top: 6px solid var(--bordo);
+        }
+        h1 { color: var(--bordo); margin-top: 0; font-size: 22px; text-align: center; }
+        .score-board {
+            display: flex; justify-content: space-between; background: var(--bordo-light);
+            padding: 10px 15px; border-radius: 8px; font-weight: bold; margin-bottom: 20px;
+            color: var(--bordo-dark); border: 1px solid #FCD34D00;
+        }
+        .canvas-container { text-align: center; margin-bottom: 20px; }
+        canvas { background: #fff; border: 1px solid var(--card-border); border-radius: 8px; }
+        .task-card {
+            background: #F1F5F9; padding: 15px; border-radius: 8px; font-size: 1.05rem; margin-bottom: 20px;
+            line-height: 1.5; border-left: 4px solid var(--bordo);
+        }
+        .input-section {
+            background: #FAF5F6; padding: 15px; border-radius: 8px; margin-bottom: 20px;
+            border: 1px solid #F3E8EA;
+        }
+        .input-row { display: flex; gap: 10px; align-items: center; margin-bottom: 12px; flex-wrap: wrap; }
+        input[type="number"] {
+            padding: 8px 12px; font-size: 1rem; border: 2px solid #CBD5E1;
+            border-radius: 6px; width: 110px; outline: none;
+        }
+        input[type="number"]:focus { border-color: var(--bordo); }
+        input[type="number"]:disabled { background: #E2E8F0; color: #94A3B8; border-color: #CBD5E1; }
+        .checkbox-label { font-size: 0.95rem; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+        .btn-group { display: flex; gap: 10px; margin-top: 15px; }
+        .btn {
+            padding: 10px 20px; font-size: 1rem; font-weight: bold; border: none;
+            border-radius: 6px; cursor: pointer; transition: 0.2s;
+        }
+        .btn-check { background: var(--bordo); color: white; }
+        .btn-check:hover { background: var(--bordo-dark); }
+        .btn-next { background: #475569; color: white; }
+        .btn-next:hover { background: #334155; }
+        .feedback { font-weight: normal; padding: 15px; border-radius: 8px; display: none; margin-bottom: 20px; line-height: 1.5; }
+        .feedback.correct { background: #DCFCE7; color: #166534; display: block; font-weight: bold; }
+        .feedback.hint { background: #FFFBEB; border: 1px solid #FCD34D; color: #92400E; display: block; }
+        .hint-title { font-weight: bold; font-size: 1.05rem; margin-bottom: 8px; color: #B45309; }
+        .formula-box { background: rgba(255,255,255,0.8); padding: 10px 12px; border-radius: 6px; margin: 8px 0; font-family: monospace; font-size: 0.95rem; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Általános háromszög – Szinusz- és Koszinusztétel</h1>
+    
+    <div class="score-board">
+        <span>Helyes válaszok: <span id="score">0</span></span>
+        <span>Összes próbálkozás: <span id="total">0</span></span>
+    </div>
+
+    <div class="canvas-container">
+        <canvas id="triangleCanvas" width="380" height="230"></canvas>
+    </div>
+
+    <div class="task-card" id="taskText">Feladat betöltése...</div>
+
+    <div id="feedback" class="feedback"></div>
+
+    <div class="input-section">
+        <div class="input-row" id="row1">
+            <label for="userAnswer1"><strong id="label1">1. válasz / megoldás:</strong></label>
+            <input type="number" id="userAnswer1" step="0.1" placeholder="0.0">
+            <span id="unitText1">cm</span>
+        </div>
+
+        <div class="input-row" id="row2" style="display: none;">
+            <label for="userAnswer2"><strong>2. megoldás (ha létezik):</strong></label>
+            <input type="number" id="userAnswer2" step="0.1" placeholder="0.0">
+            <span>°</span>
+            <label class="checkbox-label" style="margin-left: 10px;">
+                <input type="checkbox" id="noSecondCheck" onchange="toggleSecondInput()">
+                Nincs 2. megoldás
+            </label>
+        </div>
+
+        <div class="btn-group">
+            <button class="btn btn-check" onclick="checkAnswer()">Ellenőrzés</button>
+            <button class="btn btn-next" onclick="generateTask()">Új feladat</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentTask = {};
+    let score = 0;
+    let total = 0;
+    let answered = false;
+    let taskQueue = [];
+
+    const canvas = document.getElementById('triangleCanvas');
+    const ctx = canvas.getContext('2d');
+
+    function toggleSecondInput() {
+        const chk = document.getElementById('noSecondCheck');
+        const inp2 = document.getElementById('userAnswer2');
+        if (chk.checked) {
+            inp2.value = '';
+            inp2.disabled = true;
+        } else {
+            inp2.disabled = false;
+        }
+    }
+
+    function drawTriangle(labels, shapeType) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        const rot = Math.floor(Math.random() * 3);
+        let A, B, C;
+
+        if (shapeType === 'obtuse') {
+            if (rot === 0) {
+                A = { x: 50, y: 180 }; B = { x: 330, y: 180 }; C = { x: 120, y: 70 };
+            } else if (rot === 1) {
+                A = { x: 70, y: 50 }; B = { x: 320, y: 190 }; C = { x: 130, y: 190 };
+            } else {
+                A = { x: 50, y: 190 }; B = { x: 330, y: 60 }; C = { x: 260, y: 190 };
+            }
+        } else {
+            if (rot === 0) {
+                A = { x: 50, y: 180 }; B = { x: 320, y: 180 }; C = { x: 200, y: 40 };
+            } else if (rot === 1) {
+                A = { x: 60, y: 60 }; B = { x: 320, y: 120 }; C = { x: 100, y: 190 };
+            } else {
+                A = { x: 70, y: 190 }; B = { x: 310, y: 50 }; C = { x: 280, y: 180 };
+            }
+        }
+
+        ctx.beginPath();
+        ctx.moveTo(A.x, A.y);
+        ctx.lineTo(B.x, B.y);
+        ctx.lineTo(C.x, C.y);
+        ctx.closePath();
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = '#1E293B';
+        ctx.stroke();
+
+        ctx.font = 'bold 14px Arial';
+        ctx.fillStyle = '#BA0527';
+
+        ctx.fillText(labels.c, (A.x + B.x)/2 - 10, (A.y + B.y)/2 + 18);
+        ctx.fillText(labels.a, (B.x + C.x)/2 + 10, (B.y + C.y)/2);
+        ctx.fillText(labels.b, (A.x + C.x)/2 - 25, (A.y + C.y)/2);
+
+        ctx.fillStyle = '#1E293B';
+        ctx.font = '13px Arial';
+        ctx.fillText(labels.alpha, A.x + (A.x < B.x ? 15 : -25), A.y + (A.y < C.y ? 15 : -10));
+        ctx.fillText(labels.beta, B.x + (B.x > A.x ? -35 : 15), B.y + (B.y < C.y ? 15 : -10));
+        ctx.fillText(labels.gamma, C.x - 10, C.y + (C.y < A.y ? 20 : -15));
+    }
+
+    function refillQueue() {
+        const pool = [
+            'sin_side',      
+            'sin_angle_two', 
+            'cos_side',      
+            'cos_angle'      
+        ];
+        for (let i = pool.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [pool[i], pool[j]] = [pool[j], pool[i]];
+        }
+        taskQueue = pool;
+    }
+
+    function generateTask() {
+        answered = false;
+        document.getElementById('userAnswer1').value = '';
+        document.getElementById('userAnswer2').value = '';
+        document.getElementById('noSecondCheck').checked = false;
+        document.getElementById('userAnswer2').disabled = false;
+        document.getElementById('feedback').className = 'feedback';
+        
+        if (taskQueue.length === 0) {
+            refillQueue();
+        }
+        const taskType = taskQueue.pop();
+
+        if (taskType === 'sin_side') {
+            document.getElementById('row2').style.display = 'none';
+            document.getElementById('label1').innerText = 'Keresett oldal (b):';
+            document.getElementById('unitText1').innerText = 'cm';
+
+            const alpha = Math.floor(Math.random() * 35) + 35; 
+            const beta = Math.floor(Math.random() * 35) + 35;
+            const a = Math.floor(Math.random() * 10) + 8; 
+            
+            const b = +((a * Math.sin(beta * Math.PI / 180)) / Math.sin(alpha * Math.PI / 180)).toFixed(1);
+
+            const prefix = Math.random() < 0.5 ? "Egy háromszögben" : "Egy hegyesszögű háromszögben";
+            
+            currentTask = {
+                type: 'single',
+                target: b,
+                text: `${prefix} adott a = ${a} cm, α = ${alpha}° és β = ${beta}°. Számítsd ki a 'b' oldal hosszát! (1 tizedesjegyre kerekítve)`,
+                labels: { a: `a = ${a} cm`, b: 'b = ?', c: 'c', alpha: `α = ${alpha}°`, beta: `β = ${beta}°`, gamma: 'γ' },
+                shape: 'acute'
+            };
+
+        } else if (taskType === 'sin_angle_two') {
+            document.getElementById('row2').style.display = 'flex';
+            document.getElementById('label1').innerText = '1. megoldás / hegyesszög:';
+            document.getElementById('unitText1').innerText = '°';
+
+            const alpha = Math.floor(Math.random() * 20) + 25; 
+            const b = Math.floor(Math.random() * 6) + 12; 
+            
+            const minA = b * Math.sin(alpha * Math.PI / 180);
+            const a = +(minA + 1.5 + Math.random() * (b - minA - 2)).toFixed(1);
+
+            const sinBeta = (b * Math.sin(alpha * Math.PI / 180)) / a;
+            const beta1 = +(Math.asin(sinBeta) * 180 / Math.PI).toFixed(1);
+            const beta2 = +(180 - beta1).toFixed(1);
+
+            const textMode = Math.floor(Math.random() * 3); 
+            let prefix = "Egy háromszögben";
+            let hasSecond = true;
+            let target1 = beta1;
+            let target2 = beta2;
+
+            if (textMode === 1) {
+                prefix = "Egy hegyesszögű háromszögben";
+                hasSecond = false; 
+                target1 = beta1;
+            } else if (textMode === 2) {
+                prefix = "Egy tompaszögű háromszögben";
+                hasSecond = false; 
+                target1 = beta2;
+            }
+
+            currentTask = {
+                type: 'sin_angle',
+                hasSecond: hasSecond,
+                target1: target1,
+                target2: target2,
+                text: `${prefix} adott a = ${a} cm, b = ${b} cm és α = ${alpha}°. Számítsd ki a 'b' oldallal szemközti β szöget! (1 tizedesjegyre kerekítve)`,
+                labels: { a: `a = ${a} cm`, b: `b = ${b} cm`, c: 'c', alpha: `α = ${alpha}°`, beta: 'β = ?', gamma: 'γ' },
+                shape: textMode === 2 ? 'obtuse' : 'acute'
+            };
+
+        } else if (taskType === 'cos_side') {
+            document.getElementById('row2').style.display = 'none';
+            document.getElementById('label1').innerText = 'Keresett oldal (c):';
+            document.getElementById('unitText1').innerText = 'cm';
+
+            const a = Math.floor(Math.random() * 8) + 6;
+            const b = Math.floor(Math.random() * 8) + 6;
+            const gamma = Math.floor(Math.random() * 60) + 40; 
+
+            const gammaRad = gamma * Math.PI / 180;
+            const c = +Math.sqrt(a*a + b*b - 2*a*b*Math.cos(gammaRad)).toFixed(1);
+
+            currentTask = {
+                type: 'single',
+                target: c,
+                text: `Egy háromszögben adott a = ${a} cm, b = ${b} cm és a közbezárt γ = ${gamma}° szög. Számítsd ki a 'c' oldal hosszát! (1 tizedesjegyre kerekítve)`,
+                labels: { a: `a = ${a} cm`, b: `b = ${b} cm`, c: 'c = ?', alpha: 'α', beta: 'β', gamma: `γ = ${gamma}°` },
+                shape: gamma > 90 ? 'obtuse' : 'acute'
+            };
+
+        } else {
+            document.getElementById('row2').style.display = 'none';
+            document.getElementById('label1').innerText = 'Keresett szög (γ):';
+            document.getElementById('unitText1').innerText = '°';
+
+            const a = Math.floor(Math.random() * 6) + 7;
+            const b = Math.floor(Math.random() * 6) + 8;
+            const gamma = Math.floor(Math.random() * 70) + 35;
+            const gammaRad = gamma * Math.PI / 180;
+            const c = +Math.sqrt(a*a + b*b - 2*a*b*Math.cos(gammaRad)).toFixed(1);
+
+            currentTask = {
+                type: 'single',
+                target: gamma,
+                text: `Egy háromszögben adott a = ${a} cm, b = ${b} cm és c = ${c} cm. Számítsd ki az 'a' és 'b' oldalak által bezárt γ szöget fokban! (1 tizedesjegyre kerekítve)`,
+                labels: { a: `a = ${a} cm`, b: `b = ${b} cm`, c: `c = ${c} cm`, alpha: 'α', beta: 'β', gamma: 'γ = ?' },
+                shape: gamma > 90 ? 'obtuse' : 'acute'
+            };
+        }
+
+        document.getElementById('taskText').innerText = currentTask.text;
+        drawTriangle(currentTask.labels, currentTask.shape);
+    }
+
+    function checkAnswer() {
+        const feedback = document.getElementById('feedback');
+        const v1 = parseFloat(document.getElementById('userAnswer1').value);
+
+        if (isNaN(v1)) {
+            alert('Kérlek, töltsd ki az 1. válasz mezőt!');
+            return;
+        }
+
+        if (!answered) {
+            total++;
+            document.getElementById('total').innerText = total;
+        }
+
+        let isCorrect = false;
+
+        if (currentTask.type === 'single') {
+            if (Math.abs(v1 - currentTask.target) <= 0.2) {
+                isCorrect = true;
+            }
+        } else if (currentTask.type === 'sin_angle') {
+            const chk = document.getElementById('noSecondCheck').checked;
+            const v2 = parseFloat(document.getElementById('userAnswer2').value);
+
+            const ok1 = Math.abs(v1 - currentTask.target1) <= 0.2;
+
+            if (currentTask.hasSecond) {
+                const ok2 = !chk && !isNaN(v2) && Math.abs(v2 - currentTask.target2) <= 0.2;
+                if (ok1 && ok2) isCorrect = true;
+            } else {
+                if (ok1 && chk) isCorrect = true;
+            }
+        }
+
+        if (isCorrect) {
+            if (!answered) {
+                score++;
+                document.getElementById('score').innerText = score;
+            }
+            answered = true;
+            feedback.innerText = 'Helyes válasz! Kiváló munka!';
+            feedback.className = 'feedback correct';
+        } else {
+            feedback.className = 'feedback hint';
+            let hintHtml = `
+                <div class="hint-title">Sajnos nem pontos. Gondold át újra!</div>
+                <div><strong>Segítség a feladathoz:</strong></div>
+                <ul>
+                    <li>Milyen adatokat ismersz az ábráról, és mi az ismeretlen?</li>
+                    <li>Melyik tételt tudod használni úgy, hogy <strong>csak egyetlen ismeretlen</strong> legyen benne?</li>
+                </ul>
+            `;
+
+            if (currentTask.type === 'sin_angle') {
+                hintHtml += `
+                    <div class="hint-title" style="margin-top:10px;">⚠️ Figyelem a Szinusztételes szögkeresésnél:</div>
+                    <div>• A sin(β) = k egyenletből visszaszámolt hegyesszög mellett a tompaszög: <strong>180° - β</strong>.</div>
+                    <div>• Ha a feladat szövege rögzíti (pl. „hegyesszögű”), vagy a belső szögek összege meghaladná a 180°-ot, akkor pipáld be a <strong>„Nincs 2. megoldás”</strong> négyzetet!</div>
+                `;
+            }
+
+            hintHtml += `
+                <div class="hint-title" style="margin-top:10px;">Emlékeztetőül:</div>
+                <div class="formula-box">
+                    • <strong>Szinusztétel:</strong> a / b = sin(α) / sin(β)<br>
+                    • <strong>Koszinusztétel:</strong> c² = a² + b² - 2ab · cos(γ)
+                </div>
+            `;
+
+            feedback.innerHTML = hintHtml;
+        }
+    }
+
+    generateTask();
+</script>
+
+</body>
+</html>
