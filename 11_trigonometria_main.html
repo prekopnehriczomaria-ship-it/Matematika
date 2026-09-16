@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>11. Osztály - Trigonometria - PHM</title>
+    <style>
+        :root {
+            --bordo: #BA0527;
+            --bordo-dark: #8A031D;
+            --bordo-light: #FDF2F4;
+            --dark: #1E293B;
+            --gray-bg: #F8FAFC;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--gray-bg);
+            color: var(--dark);
+            margin: 0;
+            padding: 40px 20px;
+            display: flex;
+            justify-content: center;
+        }
+        .container {
+            background: white;
+            max-width: 550px;
+            width: 100%;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            border-top: 6px solid var(--bordo);
+            text-align: center;
+        }
+        h1 { color: var(--bordo); margin-top: 0; font-size: 24px; }
+        p.subtitle { color: #64748B; margin-bottom: 30px; font-size: 0.95rem; }
+        .menu-list { display: flex; flex-direction: column; gap: 15px; }
+        .menu-card {
+            background: #F8FAFC;
+            border: 2px solid #E2E8F0;
+            border-radius: 8px;
+            padding: 18px 20px;
+            text-decoration: none;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: all 0.2s ease;
+        }
+        .menu-card:hover {
+            border-color: var(--bordo);
+            background: var(--bordo-light);
+            transform: translateY(-2px);
+        }
+        .card-title { font-weight: bold; font-size: 1.05rem; color: var(--bordo-dark); }
+        .card-desc { font-size: 0.85rem; color: #64748B; margin-top: 4px; text-align: left; }
+        .icon { font-size: 1.5rem; }
+        .back-link {
+            display: inline-block;
+            margin-top: 25px;
+            color: #64748B;
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: bold;
+        }
+        .back-link:hover { color: var(--bordo); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>11. Osztály – Trigonometria</h1>
+    <p class="subtitle">Válaszd ki a gyakorolni kívánt témakört!</p>
+
+    <div class="menu-list">
+        <a href="11_trigonometria_derekszogu.html" class="menu-card">
+            <div style="text-align: left;">
+                <div class="card-title">Derékszögű háromszög</div>
+                <div class="card-desc">Szinusz, koszinusz és tangens szögfüggvények</div>
+            </div>
+            <span class="icon">📐</span>
+        </a>
+
+        <a href="11_szinusz_koszinusz_tetel.html" class="menu-card">
+            <div style="text-align: left;">
+                <div class="card-title">Általános háromszög</div>
+                <div class="card-desc">Szinusz- és koszinusztétel (két megoldásos logikával)</div>
+            </div>
+            <span class="icon">🔺</span>
+        </a>
+    </div>
+
+    <a href="index.html" class="back-link">← Vissza a főoldalra</a>
+</div>
+
+</body>
+</html>
